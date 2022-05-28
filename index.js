@@ -36,7 +36,12 @@ ticket:{
 
 }
 
-
+tipo_de_plan: {
+    tipo: "Normal",
+    cant_canales: 55,
+    canales:[4,5,6,7,8,9,11],
+    precio: 1250.55 
+},
 
 cliente: {
     nombre: "Juan",
@@ -65,6 +70,6 @@ empleado:{
     { 
         "nombre": "emplea",
         "apellido": "ado",
-        area: {"nombre": "atencion al cliente", posicion: GPS}
+        "area": {"nombre": "atencion al cliente", "posicion": GPS}
     },
 }
