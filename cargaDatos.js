@@ -187,121 +187,59 @@ db.empleados.insertOne({
 //#endregion
 
 
+//#region Location Point para clientes
+//La Boca
+{
+    "type": "Point",
+    "coordinates": [
+            -58.36117744445801,
+            -34.63419661490388
+        ]
+}
 
+//Constitucion
+{
+    "type": "Point",
+    "coordinates": [
+            -58.38563919067382,
+            -34.62579225932789
+        ]
+}
 
-//#region QUERIES
+//Balvanera
+{
+    "type": "Point",
+    "coordinates": [
+            -58.39774131774902,
+            -34.60820392067226
+        ]
+}
 
-//La cantidad de tickets que atendio cada empleado
-db.tickets.aggregate([
-    {
-        $unwind: "$responsables"
-    },
-    {
-        $group: {
-            _id: "$responsables.nombre",
-            atendidos: { $sum: 1 }
-        }
-    }
-])
+//Otro Balvanera
+{
+    "type": "Point",
+    "coordinates": [
+            -58.400487899780266,
+            -34.60735619576232
+        ]
+}
 
-//El empleado que mas tickets atendio
-db.tickets.aggregate([
-    {
-        $unwind: "$responsables"
-    },
-    {
-        $group: {
-            _id: "$responsables.nombre",
-            atendidos: { $sum: 1 }
-        }
-    },
-    {
-        $sort: {
-            atendidos: 1
-        }
-    },
-    {
-        $limit: 1
-    }
-])
+//Palermo
+{
+    "type": "Point",
+    "coordinates": [
+            -58.416624069213874,
+            -34.58665489383671
+        ]
+}
 
-//Todos los tickets que estan sin resolver
-db.tickets.aggregate([
-    {
-        $match: {
-            resuelto: false
-        }
-    }
-])
-
-
-//La cantidad de tickets de cada cliente
-db.tickets.aggregate([
-    {
-        $unwind: "$cliente"
-    },
-    {
-        $group: {
-            _id: { dni: "$cliente.dni", nombre: "$cliente.nombre", apellido: "$cliente.apellido" },
-            tickets: { $sum: 1 }
-        }
-    }
-])
-
-//Todos los tickets iniciados en un dia en particular       XFALTAX
-db.tickets.aggregate([
-    {
-        $match: {
-            fecha_inicio: Date
-        }
-    }
-])
-
-
-//Cual es el motivo por el que llegan mas tickets
-db.tickets.aggregate([
-    {
-        $group: {
-            _id: "$motivo",
-            cantidad: { $sum: 1 }
-        }
-    },
-    {
-        $sort: {
-            cantidad: 1
-        }
-    },
-    {
-        $limit: 1
-    }
-])
-
-db.tickets.aggregate([
-    {
-        $project : { 
-            _id:0, 
-            diaDelMes:{ $dayOfMonth : obj.fecha },
-            mes: {$month: obj.fecha}, 
-            anio:{$year : obj.fecha} , 
-            hora:{$hour : obj.fecha}, 
-            minuto:{$minute: obj.fecha}, 
-            segundo : {$second: obj.fecha}, 
-            diaDelAnio: {$dayOfYear: obj.fecha}, 
-            diaDeLaSemana: {$dayOfWeek : new Date()}, 
-            semana : {$week : new Date()}, 
-            milisegundo:{$millisecond: new Date()} 
-        }
-    }
-]).pretty()
-
-//El motivo que 
-db.tickets.aggregate([
-    {
-        $sortByCount : '$motivo'
-    },
-    {
-        $limit:1
-    }
-])
+//Avellaneda
+{
+    "type": "Point",
+    "coordinates": [
+            -58.36306571960449,
+            -34.66431111283041
+        ]
+}
 
 //#endregion
