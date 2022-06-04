@@ -11,24 +11,24 @@ db.tickets.insertOne({
         "tipo_de_plan": {
             "tipo": "Normal",
             "cant_canales": 10,
-            "canales": [1,2,3,4,5,6,7,8,9,10],
+            "canales": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             "precio": 1500.50
         },
-        "localidad":{
+        "localidad": {
             "nombre": "Avellaneda",
             "descripcion": "lorem impsu",
             "codigo_postal": 5412
         }
     },
-    "responsables":[
-        { 
+    "responsables": [
+        {
             "nombre": "emplea",
             "apellido": "ado",
-            "area": {"nombre": "atencion al cliente", "posicion": 888}
+            "area": { "nombre": "atencion al cliente", "posicion": 888 }
         },
         {
             "nombre": "pepe",
-            "apellido" :"messi",
+            "apellido": "messi",
             "area": "sistemas"
         }
     ],
@@ -47,25 +47,61 @@ db.tickets.insertOne({
         "tipo_de_plan": {
             "tipo": "Premium",
             "cant_canales": 20,
-            "canales": [1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20],
-            "precio": 2500 
+            "canales": [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+            "precio": 2500
         },
-        "localidad":{
+        "localidad": {
             "nombre": "Avellaneda",
             "descripcion": "Zona sur",
             "codigo_postal": 1092
         }
     },
-    "responsables":[
-        { 
+    "responsables": [
+        {
             "nombre": "Rodrigo",
             "apellido": "Quintero",
-            "area": {"nombre": "atencion al cliente", "posicion": 888}
+            "area": { "nombre": "atencion al cliente", "posicion": 888 }
         }
     ],
     "pasos": ["Recepcion"],
     "resuelto": false,
     "finalizado": true
+})
+
+db.tickets.insertOne({
+    "fecha": new Date(),
+    "motivo": "devolucion",
+    "cliente": {
+        "nombre": "Juan",
+        "apellido": "Perez",
+        "posicion": 777,
+        "tipo_de_plan": {
+            "tipo": "Normal",
+            "cant_canales": 10,
+            "canales": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            "precio": 1500.50
+        },
+        "localidad": {
+            "nombre": "Avellaneda",
+            "descripcion": "lorem impsu",
+            "codigo_postal": 5412
+        }
+    },
+    "responsables": [
+        {
+            "nombre": "emplea",
+            "apellido": "ado",
+            "area": { "nombre": "atencion al cliente", "posicion": 888 }
+        },
+        {
+            "nombre": "pepe",
+            "apellido": "messi",
+            "area": "sistemas"
+        }
+    ],
+    "pasos": ["Recepcion", "consulta", "servicio tecnico", "repuestos"],
+    "resuelto": false,
+    "finalizado": false
 })
 
 //#endregion
@@ -78,10 +114,10 @@ db.clientes.insertOne({
     "tipo_de_plan": {
         "tipo": "Normal",
         "cant_canales": 10,
-        "canales":[1,2,3,4,5,6,7,8,9,10],
-        "precio": 1250.55 
+        "canales": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "precio": 1250.55
     },
-    "localidad":{
+    "localidad": {
         "nombre": "Avellaneda",
         "descripcion": "Zona sur",
         "codigo_postal": 1092
@@ -95,10 +131,10 @@ db.clientes.insertOne({
     "tipo_de_plan": {
         "tipo": "Premium",
         "cant_canales": 20,
-        "canales":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+        "canales": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
         "precio": 2500
     },
-    "localidad":{
+    "localidad": {
         "nombre": "Avellaneda",
         "descripcion": "Zona sur",
         "codigo_postal": 1092
@@ -121,19 +157,18 @@ db.localidades.insertOne({
 })
 //#endregion
 
-
 //#region inserto planes
 db.planes.insertOne({
     "tipo": "Premium",
     "cant_canales": 20,
-    "canales":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+    "canales": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
     "precio": 2500.50
 })
 
 db.planes.insertOne({
     "tipo": "Normal",
     "cant_canales": 10,
-    "canales":[1,2,3,4,5,6,7,8,9,10],
+    "canales": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     "precio": 1250.55
 })
 
@@ -149,4 +184,124 @@ db.empleados.insertOne({
         "posicion": 777
     }
 })
+//#endregion
+
+
+
+
+//#region QUERIES
+
+//La cantidad de tickets que atendio cada empleado
+db.tickets.aggregate([
+    {
+        $unwind: "$responsables"
+    },
+    {
+        $group: {
+            _id: "$responsables.nombre",
+            atendidos: { $sum: 1 }
+        }
+    }
+])
+
+//El empleado que mas tickets atendio
+db.tickets.aggregate([
+    {
+        $unwind: "$responsables"
+    },
+    {
+        $group: {
+            _id: "$responsables.nombre",
+            atendidos: { $sum: 1 }
+        }
+    },
+    {
+        $sort: {
+            atendidos: 1
+        }
+    },
+    {
+        $limit: 1
+    }
+])
+
+//Todos los tickets que estan sin resolver
+db.tickets.aggregate([
+    {
+        $match: {
+            resuelto: false
+        }
+    }
+])
+
+
+//La cantidad de tickets de cada cliente
+db.tickets.aggregate([
+    {
+        $unwind: "$cliente"
+    },
+    {
+        $group: {
+            _id: { dni: "$cliente.dni", nombre: "$cliente.nombre", apellido: "$cliente.apellido" },
+            tickets: { $sum: 1 }
+        }
+    }
+])
+
+//Todos los tickets iniciados en un dia en particular       XFALTAX
+db.tickets.aggregate([
+    {
+        $match: {
+            fecha_inicio: Date
+        }
+    }
+])
+
+
+//Cual es el motivo por el que llegan mas tickets
+db.tickets.aggregate([
+    {
+        $group: {
+            _id: "$motivo",
+            cantidad: { $sum: 1 }
+        }
+    },
+    {
+        $sort: {
+            cantidad: 1
+        }
+    },
+    {
+        $limit: 1
+    }
+])
+
+db.tickets.aggregate([
+    {
+        $project : { 
+            _id:0, 
+            diaDelMes:{ $dayOfMonth : obj.fecha },
+            mes: {$month: obj.fecha}, 
+            anio:{$year : obj.fecha} , 
+            hora:{$hour : obj.fecha}, 
+            minuto:{$minute: obj.fecha}, 
+            segundo : {$second: obj.fecha}, 
+            diaDelAnio: {$dayOfYear: obj.fecha}, 
+            diaDeLaSemana: {$dayOfWeek : new Date()}, 
+            semana : {$week : new Date()}, 
+            milisegundo:{$millisecond: new Date()} 
+        }
+    }
+]).pretty()
+
+//El motivo que 
+db.tickets.aggregate([
+    {
+        $sortByCount : '$motivo'
+    },
+    {
+        $limit:1
+    }
+])
+
 //#endregion
