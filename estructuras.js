@@ -6,7 +6,7 @@ tickets:{
         nombre: "Juan",
         apellido: "Perez",
         dni: 12345678,
-        posicion: {
+        ubicacion: {
             "type": "Point",
             "coordinates":[123,132]
         },
@@ -19,11 +19,20 @@ tickets:{
         localidad:{
             nombre: "Avellaneda",
             descripcion: "lorem impsu",
-            codigo_postal: 5412
+            codigo_postal: 5412,
+            posicion: {
+                "type": "Polygon",
+                "coordinates": [
+                    [123,124],
+                    [123,122],
+                    [122,125]
+                ]
+            },
         }
-    },
+    }
     responsables:[
         { 
+            "idEmpleado":1, 
             "nombre": "emplea",
             "apellido": "ado",
             "dni": 12345678,
@@ -36,6 +45,7 @@ tickets:{
             }
         },
         {
+            "idEmpleado":1, 
             "nombre": "pepe",
             "apellido" :"messi",
             "dni": 12345678,
@@ -65,7 +75,7 @@ tickets:{
 
 planes: {
     tipo: "Normal",
-    cant_canales: 55,
+    cant_canales: 10,
     canales:[4,5,6,7,8,9,11],
     precio: 1250.55 
 },
@@ -74,7 +84,7 @@ clientes: {
     nombre: "Juan",
     apellido: "Perez",
     dni: 12345678,
-    posicion: {
+    ubicacion: {
         "type": "Point",
         "coordinates":[123,132]
     },
@@ -114,8 +124,9 @@ localidades:{
 }
 
 empleados:{
-    { 
-        "nombre": "emplea",
+    {
+        "idEmpleado":1, 
+        "nombre": "emple",
         "apellido": "ado",
         "dni": 12345678,
         "area": {"nombre": "atencion al cliente", "posicion": GPS},
