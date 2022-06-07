@@ -112,7 +112,7 @@ clientes: {
 localidades:{
     nombre: "Avellaneda",
     descripcion: "lorem impsu",
-    codigo_postal: 5412,
+    codigo_postal: 1092,
     posicion: {
         "type": "Polygon",
         "coordinates": [
