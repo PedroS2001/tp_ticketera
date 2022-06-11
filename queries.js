@@ -55,15 +55,6 @@ db.tickets.aggregate([
     }
 ])
 
-//Todos los tickets iniciados en un dia en particular       XFALTAX
-db.tickets.aggregate([
-    {
-        $match: {
-            fecha_inicio: Date
-        }
-    }
-])
-
 
 //Cual es el motivo por el que llegan mas tickets
 db.tickets.aggregate([
@@ -91,6 +82,102 @@ db.tickets.aggregate([
         $limit: 1
     }
 ])
+
+
+// La cantidad de tickets en el mes de mayo
+db.tickets.find(
+    {
+        $and: [
+            {
+                fecha_inicio: { $lte: new Date("2022/5/31") }
+            },
+            {
+                fecha_inicio: { $gte: new Date("2022/5/1") }
+            }
+        ]
+    }
+).count()
+
+//Todos los tickets de clientes de Zona Sur
+db.tickets.find({
+    "cliente.localidad.nombre" : {$in: ["Avellaneda", "Quilmes", "Lanus"]}
+})
+
+
+
+//CREO INDICE EN LOCALIDADES PARA EMPEZAR A HACER CONSULTAS DE GEOJSON
+db.localidades.createIndex({ posicion: "2dsphere" })
+db.clientes.createIndex({ ubicacion: "2dsphere" })
+db.empleados.createIndex({ camino: "2dsphere" })
+
+//Obtengo un cliente y luego me fijo en que barrio esta
+var cliente = db.clientes.findOne({});
+
+db.localidades.findOne({
+    posicion:
+    {
+        $geoIntersects:
+        {
+            $geometry: cliente.ubicacion
+        }
+    }
+},
+    { "nombre": 1 }
+)
+//tambien podria hacer cliente.localidad.nombre xq la localidad esta en el cliente.
+//Ahora con esto (consultas compuestas) y el lookup me parece que me quedan mas chicos los tickets
+
+
+//Todos los clientes que su apelllido sea Gonzalez o Perez que esten en una localidad
+var localidad = db.localidades.findOne({});
+db.clientes.find({
+    $or:[
+        {"apellido": "Gonzalez"},
+        {"apellido": "Perez"},
+    ],
+    ubicacion:
+    {
+        $geoWithin:
+        {
+            $geometry: localidad.posicion
+        }
+    }
+})
+
+
+//Si hay algun tecnico que pase a 2km de un cliente
+var cliente = db.clientes.findOne({});
+db.empleados.find({
+    tipo:"tecnico",
+    camino:
+    {
+        $near:
+        {
+            $geometry: cliente.ubicacion,
+            $maxDistance: 2000
+        }
+    }
+})
+
+
+//Todos los clientes que estan cercca del tecnico
+var tecnico = db.empleados.findOne({"tipo":"tecnico"})
+db.clientes.find({
+    ubicacion:{
+        $near:{
+            $geometry: tecnico.area.posicion,
+            $maxDistance: 5000
+        }
+    }
+},{
+    "localidad.posicion":0,
+    "tipo_de_plan.canales":0
+})
+
+
+
+
+
 
 //AYUDA DATETIME
 var obj = findOne();
