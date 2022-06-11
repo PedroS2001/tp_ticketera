@@ -24,23 +24,13 @@ db.tickets.aggregate([
     },
     {
         $sort: {
-            atendidos: 1
+            atendidos: -1
         }
     },
     {
         $limit: 1
     }
 ])
-
-//Todos los tickets que estan sin resolver
-db.tickets.aggregate([
-    {
-        $match: {
-            resuelto: false
-        }
-    }
-])
-
 
 //La cantidad de tickets de cada cliente
 db.tickets.aggregate([
@@ -55,7 +45,6 @@ db.tickets.aggregate([
     }
 ])
 
-
 //Cual es el motivo por el que llegan mas tickets
 db.tickets.aggregate([
     {
@@ -66,13 +55,14 @@ db.tickets.aggregate([
     },
     {
         $sort: {
-            cantidad: 1
+            cantidad: -1
         }
     },
     {
         $limit: 1
     }
 ])
+
 //El motivo que mas hay v2
 db.tickets.aggregate([
     {
@@ -83,6 +73,14 @@ db.tickets.aggregate([
     }
 ])
 
+//Todos los tickets que estan sin resolver
+db.tickets.aggregate([
+    {
+        $match:{
+            resuelto: false
+        }
+    }
+])
 
 // La cantidad de tickets en el mes de mayo
 db.tickets.find(
@@ -99,10 +97,34 @@ db.tickets.find(
 ).count()
 
 //Todos los tickets de clientes de Zona Sur
-db.tickets.find({
-    "cliente.localidad.nombre" : {$in: ["Avellaneda", "Quilmes", "Lanus"]}
-})
+db.tickets.find(
+    {
+        "cliente.localidad.nombre": { $in: ["Avellaneda", "Quilmes", "Lanus"] }
+    }
+)
 
+//Todos los tickets que se resolvieron en 1 solo paso
+db.tickets.find(
+    {
+        $and: [
+            {
+                pasos: {
+                    $size: 1
+                }
+            },
+            {
+                resuelto: true
+            }
+        ]
+    }
+)
+
+//Todos los que no tengan plan normal
+db.clientes.find(
+    {
+        "tipo_de_plan.tipo": { $ne: "Normal" }
+    }
+)
 
 
 //CREO INDICE EN LOCALIDADES PARA EMPEZAR A HACER CONSULTAS DE GEOJSON
@@ -110,7 +132,7 @@ db.localidades.createIndex({ posicion: "2dsphere" })
 db.clientes.createIndex({ ubicacion: "2dsphere" })
 db.empleados.createIndex({ camino: "2dsphere" })
 
-//Obtengo un cliente y luego me fijo en que barrio esta
+//Obtengo un cliente y luego me fijo en que barrio esta segun su ubicacion
 var cliente = db.clientes.findOne({});
 
 db.localidades.findOne({
@@ -131,9 +153,9 @@ db.localidades.findOne({
 //Todos los clientes que su apelllido sea Gonzalez o Perez que esten en una localidad
 var localidad = db.localidades.findOne({});
 db.clientes.find({
-    $or:[
-        {"apellido": "Gonzalez"},
-        {"apellido": "Perez"},
+    $or: [
+        { "apellido": "Gonzalez" },
+        { "apellido": "Perez" },
     ],
     ubicacion:
     {
@@ -148,7 +170,7 @@ db.clientes.find({
 //Si hay algun tecnico que pase a 2km de un cliente
 var cliente = db.clientes.findOne({});
 db.empleados.find({
-    tipo:"tecnico",
+    tipo: "tecnico",
     camino:
     {
         $near:
@@ -161,18 +183,92 @@ db.empleados.find({
 
 
 //Todos los clientes que estan cercca del tecnico
-var tecnico = db.empleados.findOne({"tipo":"tecnico"})
+var tecnico = db.empleados.findOne({ "tipo": "tecnico" })
 db.clientes.find({
-    ubicacion:{
-        $near:{
+    ubicacion: {
+        $near: {
             $geometry: tecnico.area.posicion,
             $maxDistance: 5000
         }
     }
-},{
-    "localidad.posicion":0,
-    "tipo_de_plan.canales":0
+}, {
+    "localidad.posicion": 0,
+    "tipo_de_plan.canales": 0
 })
+
+//las localidades de los cliente si no tuvieran localidaad en su cuerpo
+db.clientes.aggregate([
+    {
+        $lookup:
+        {
+            from: "localidades",
+            localField: "localidad.nombre",
+            foreignField: "nombre",
+            as: "nombreLocalidad"
+        }
+    },
+    {
+        $project: {
+            "nombreLocalidad": 1
+        }
+    }
+])
+
+
+
+
+
+
+//CREO INDICE DE TEXTO
+db.tickets.createIndex(
+    {
+        "motivo": "text",
+        "cliente.nombre": "text",
+        "cliente.apellido": "text",
+        "cliente.tipo_de_plan.tipo": "text",
+        "cliente.localidad.nombre": "text",
+        "cliente.localidad.descripcion": "text",
+        "responsables.nombre": "text",
+        "responsables.apellido": "text",
+        "pasos": "text"
+    },
+    {
+        weights:
+        {
+            "motivo": 100,
+            "cliente.nombre": 90,
+            "cliente.apellido": 90,
+            "cliente.tipo_de_plan.tipo": 50,
+            "cliente.localidad.nombre": 50,
+            "cliente.localidad.descripcion": 40,
+            "responsables.nombre": 60,
+            "responsables.apellido": 60,
+            "pasos": 70
+        },
+        name: "TextIndex"
+    }
+)
+
+//Busco los que el cliente o el responsable sean Gonzalez
+db.tickets.find({
+    $text: {
+        $search: "Gonzalez"
+    }
+}).count()
+
+
+db.tickets.find({
+    $text: {
+        $search: "Gonzalez"
+    }
+},
+{
+    "cliente.apellido":1,
+    "responsables.apellido":1,
+    score: { $meta: "textScore" }
+}).sort( { score: { $meta: "textScore" } } ).pretty()
+
+
 
 
 
@@ -201,3 +297,31 @@ db.tickets.aggregate([
 
 
 
+db.ships.aggregate([
+    {
+
+        $match: { Name: "MSC Zoe" }
+    },
+    {
+        $lookup:
+        {
+            from: "containers",
+            localField: "Name",
+            foreignField: "shipName",
+            as: "cargo"
+        }
+    },
+    {
+        $project: {
+            nave: "$Name",
+            cantidadCargo:
+            {
+                $size: "$cargo"
+            }
+        }
+    },
+    {
+
+        $out: "vistaejer3"
+    }
+])
