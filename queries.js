@@ -76,7 +76,7 @@ db.tickets.aggregate([
 //Todos los tickets que estan sin resolver
 db.tickets.aggregate([
     {
-        $match:{
+        $match: {
             resuelto: false
         }
     }
@@ -126,6 +126,23 @@ db.clientes.find(
     }
 )
 
+//Traer todos los tecnicos que tienen que hacer un recorrido
+db.empleados.find({
+    camino: { $exists: true }
+})
+
+
+//Todos los clientes que tienen TODOS los canales de aire
+db.tickets.find({
+    "cliente.tipo_de_plan.canales": {
+        $all: [7, 9, 10, 12]
+    }
+})
+
+
+
+
+
 
 //CREO INDICE EN LOCALIDADES PARA EMPEZAR A HACER CONSULTAS DE GEOJSON
 db.localidades.createIndex({ posicion: "2dsphere" })
@@ -146,43 +163,52 @@ db.localidades.findOne({
 },
     { "nombre": 1 }
 )
-//tambien podria hacer cliente.localidad.nombre xq la localidad esta en el cliente.
-//Ahora con esto (consultas compuestas) y el lookup me parece que me quedan mas chicos los tickets
 
 
-//Todos los clientes que su apelllido sea Gonzalez o Perez que esten en una localidad
-var localidad = db.localidades.findOne({});
-db.clientes.find({
-    $or: [
-        { "apellido": "Gonzalez" },
-        { "apellido": "Perez" },
-    ],
-    ubicacion:
-    {
-        $geoWithin:
+//Los tickets de desperfecto sin resolver dentro del area de cobertura de las oficinas de servicio tecnico
+var oficina = db.oficinas.findOne({ "idOficina": 3 });
+var oficina2 = db.oficinas.findOne({ "idOficina": 2 });
+db.tickets.find({
+    $and: [
+        { "resuelto": false },
+        { "motivo": "Desperfecto" },
         {
-            $geometry: localidad.posicion
+            $or: [
+                {
+                    "cliente.ubicacion": {
+                        $geoWithin: {
+                            $geometry: oficina.area_cobertura
+                        }
+                    }
+                },
+                {
+                    "cliente.ubicacion": {
+                        $geoWithin: {
+                            $geometry: oficina2.area_cobertura
+                        }
+                    }
+                }
+            ]
         }
-    }
+    ]
 })
 
 
-//Si hay algun tecnico que pase a 2km de un cliente
-var cliente = db.clientes.findOne({});
+//Si hay algun tecnico que pase a 2km de un cliente (para que el cliente vaya a esperarlo y le devuelva el equipo)
+var ticketDevolucion = db.tickets.findOne({ "motivo": "devolucion" }, { cliente: 1 })
 db.empleados.find({
     tipo: "tecnico",
-    camino:
-    {
+    camino: {
         $near:
         {
-            $geometry: cliente.ubicacion,
-            $maxDistance: 2000
+            $geometry: ticketDevolucion.cliente.ubicacion,
+            $maxDistance: 20000
         }
     }
 })
 
 
-//Todos los clientes que estan cercca del tecnico
+//Todos los clientes que estan cercca del tecnico (para que el tecnico sepa a donde ir)
 var tecnico = db.empleados.findOne({ "tipo": "tecnico" })
 db.clientes.find({
     ubicacion: {
@@ -196,7 +222,17 @@ db.clientes.find({
     "tipo_de_plan.canales": 0
 })
 
-//las localidades de los cliente si no tuvieran localidaad en su cuerpo
+
+
+
+
+
+
+
+
+
+
+//Los nombres de los clientes y sus localidades
 db.clientes.aggregate([
     {
         $lookup:
@@ -209,12 +245,33 @@ db.clientes.aggregate([
     },
     {
         $project: {
-            "nombreLocalidad": 1
+            "nombre": 1,
+            "apellido": 1,
+            "nombreLocalidad.nombre": 1,
+            "_id": 0
         }
     }
 ])
 
 
+//HACER
+db.clientes.aggregate([
+    {
+        $lookup: {
+            from: "empleados",
+            localField: "dni",
+            foreignField: "dni",
+            as: "nombrecin"
+        }
+    },
+    {
+        $project: {
+            "nombre": 1,
+            "dni": 1,
+            "nombrecin.dni": 1
+        }
+    }
+])
 
 
 
@@ -259,14 +316,15 @@ db.tickets.find({
 
 db.tickets.find({
     $text: {
-        $search: "Gonzalez"
+        $search: "dar de"
     }
 },
-{
-    "cliente.apellido":1,
-    "responsables.apellido":1,
-    score: { $meta: "textScore" }
-}).sort( { score: { $meta: "textScore" } } ).pretty()
+    {
+        "motivo": 1,
+        "cliente.apellido": 1,
+        "responsables.apellido": 1,
+        score: { $meta: "textScore" }
+    }).sort({ score: { $meta: "textScore" } }).pretty()
 
 
 

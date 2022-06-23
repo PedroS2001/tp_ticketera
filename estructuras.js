@@ -58,16 +58,7 @@ tickets:{
                 }
         }
     ],
-    pasos: [
-        {
-            "area": "Atencion al cliente",
-            fecha: Date
-        },
-        {
-            "area": "Repartidor",
-            fecha: Date
-        },
-    ],
+    pasos: [ "atencion al cliente", "servicio tecnico"],
     resuelto: false,
     finalizado: false
 
